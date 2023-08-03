@@ -1,69 +1,74 @@
-def generate_hamming_code(data):
-    n = len(data)
-    m = 0  # Number of redundant bits required
-    while 2 ** m < n + m + 1:
-        m += 1
+import math
+def calcRedundantBits(m): 
+    for x in range(m):
+        if(2**x >= m + x + 1):
+            return x
+ 
+def posRedundantBits(data, r):
+ 
 
-    # Insert 0s in the positions of the redundant bits
-    hamming_code = [0] * (n + m)
-    j = 0  # Index for the data bits
-    for i in range(1, n + m + 1):
-        if i == 2 ** m:
-            m += 1
-        else:
-            hamming_code[i - 1] = data[j]
+    j = 0
+    k = 1
+    m = len(data)
+    res = ''
+
+    for i in range(1, m + r+1):
+        if(i == 2**j):
+            res = res + '0'
             j += 1
+        else:
+            res = res + data[-1 * k]
+            k += 1
 
-    # Calculate the values of the redundant bits
-    for i in range(m):
-        pos = 2 ** i - 1
-        parity = 0
-        for j in range(pos, n + m, 2 * pos + 2):
-            parity ^= hamming_code[j]
-        hamming_code[pos] = parity
+    return res[::-1]
+ 
+ 
+def calcParityBits(arr, r):
+    n = len(arr)
+ 
 
-    return hamming_code
+    for i in range(r):
+        val = 0
+        for j in range(1, n + 1):
+            if(j & (2**i) == (2**i)):
+                val = val ^ int(arr[-1 * j])
 
+        arr = arr[:n-(2**i)] + str(val) + arr[n-(2**i)+1:]
+    return arr
+ 
+ 
+def detectError(arr, nr):
+    n = len(arr)
+    res = 0
+ 
+    for i in range(nr):
+        val = 0
+        for j in range(1, n + 1):
+            if(j & (2**i) == (2**i)):
+                val = val ^ int(arr[-1 * j])
+ 
 
-def fix_hamming_code(code):
-    m = 0  # Number of redundant bits
-    while 2 ** m < len(code):
-        m += 1
-
-    error_pos = 0
-    for i in range(m):
-        pos = 2 ** i - 1
-        parity = 0
-        for j in range(pos, len(code), 2 * pos + 2):
-            parity ^= code[j]
-        error_pos += parity * pos
-
-    if error_pos != 0:
-        # Flip the erroneous bit
-        code[error_pos - 1] ^= 1
-
-    # Check if the sum of ones is even and add the parity bit accordingly
-    count_ones = sum(code)
-    code.append(count_ones % 2)
-
-    return code
-
-
-def main():
-    data = [1, 0, 1, 0]  # Replace this with your own data (binary representation)
-    print("Original Data:", data)
-
-    hamming_code = generate_hamming_code(data)
-    print("Generated Hamming Code:", hamming_code)
-
-    # Introduce an error to the code
-    hamming_code[2] = 0
-    print("Hamming Code with Error:", hamming_code)
-
-    # Fix the code
-    fixed_code = fix_hamming_code(hamming_code)
-    print("Fixed Hamming Code:", fixed_code)
-
-
-if __name__ == "__main__":
-    main()
+        res = res + val*(10**i)
+ 
+    return int(str(res), 2)
+ 
+menu = int(input("¿Que desea hacer?\n1. Mandar Información.\n2. Recibir Información\n"))
+if menu == 1:
+    data = input("Escribir mensaje a enviar: ")
+    
+    r = calcRedundantBits(len(data))
+    
+    arr = posRedundantBits(data, r)
+    
+    arr = calcParityBits(arr, r)
+    
+    print("Mensaje en Hamming " + arr) 
+ 
+ 
+elif menu == 2:
+    arr = input("Que mensaje quiere recibir: ")
+    correction = detectError(arr, round(math.log2(len(arr))))
+    if(correction==0):
+        print("No hay error del mensaje!")
+    else:
+        print("Error. Posición ",len(arr)-correction+1," de izquieda")

@@ -1,3 +1,5 @@
+import java.util.Scanner;
+
 public class CRC32 {
     private static final int POLYNOMIAL = 0x04C11DB7;
 
@@ -22,49 +24,48 @@ public class CRC32 {
         return data;
     }
 
-    private static String intArrayToBinaryString(int[] data) {
-        StringBuilder binaryStringBuilder = new StringBuilder();
-        for (int bit : data) {
-            binaryStringBuilder.append(bit);
-        }
-        return binaryStringBuilder.toString();
-    }
-
     public static void main(String[] args) {
-        // Input binary data as a string of 0s and 1s
-        String inputBinaryData = "110101111";
+        Scanner sc = new Scanner(System.in);
+        System.out.println("¿Que desea hacer?\n1. Mandar información\n2. Recibir información.");
+        int a = sc.nextInt();
+        if (a == 1) {
+            System.out.println("Ingrese la información a mandar.");
+            String size = sc.nextLine();
+            String inputBinaryData = size;
 
-        // Convert binary input string to an array of integers (0s and 1s)
-        int[] inputData = binaryStringToIntArray(inputBinaryData);
+            // Convert binary input string to an array of integers (0s and 1s)
+            int[] inputData = binaryStringToIntArray(inputBinaryData);
 
-        // Calculate CRC-32 value for the input data
-        int crcValue = crc32Binary(inputData);
+            // Calculate CRC-32 value for the input data
+            int crcValue = crc32Binary(inputData);
 
-        // Convert the CRC-32 value to a binary string representation
-        String crcBinaryString = String.format("%32s", Integer.toBinaryString(crcValue)).replace(' ', '0');
+            // Convert the CRC-32 value to a binary string representation
+            String crcBinaryString = String.format("%32s", Integer.toBinaryString(crcValue)).replace(' ', '0');
 
-        // Append the CRC-32 value to the data to simulate transmission
-        String transmittedData = inputBinaryData + crcBinaryString;
+            // Append the CRC-32 value to the data to simulate transmission
+            String transmittedData = inputBinaryData + crcBinaryString;
+            System.out.println(transmittedData);
+        } else if (a == 2) {
+            // Introduce an error in the transmitted data by flipping a bit
+            System.out.println("Ingrese la información a recibir.");
+            String transmittedData = sc.nextLine();
 
-        // Introduce an error in the transmitted data by flipping a bit
-        String transmittedDataWithError = transmittedData.substring(0, 5)
-                + (transmittedData.charAt(5) == '0' ? '1' : '0') + transmittedData.substring(6);
+            // Extract the received data (excluding the appended CRC value)
+            String receivedData = transmittedData.substring(0, transmittedData.length() - 32);
 
-        // Extract the received data (excluding the appended CRC value)
-        String receivedData = transmittedDataWithError.substring(0, transmittedDataWithError.length() - 32);
+            // Convert the received data to an array of integers (0s and 1s)
+            int[] receivedDataArray = binaryStringToIntArray(receivedData);
 
-        // Convert the received data to an array of integers (0s and 1s)
-        int[] receivedDataArray = binaryStringToIntArray(receivedData);
+            // Calculate the CRC-32 value for the received data
+            int receivedCrcValue = crc32Binary(receivedDataArray);
 
-        // Calculate the CRC-32 value for the received data
-        int receivedCrcValue = crc32Binary(receivedDataArray);
-
-        // Compare the calculated CRC-32 value with the transmitted CRC value
-        if (receivedCrcValue == Integer
-                .parseInt(transmittedDataWithError.substring(transmittedDataWithError.length() - 32), 2)) {
-            System.out.println("Error not detected: Data is likely intact.");
-        } else {
-            System.out.println("Error detected: Data may have been corrupted during transmission.");
+            // Compare the calculated CRC-32 value with the transmitted CRC value
+            if (receivedCrcValue == Integer
+                    .parseInt(transmittedData.substring(transmittedData.length() - 32), 2)) {
+                System.out.println("No se detecto error");
+            } else {
+                System.out.println("Se detecto un error. Data esta corrompida.");
+            }
         }
     }
 }

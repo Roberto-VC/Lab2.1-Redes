@@ -1,202 +1,96 @@
 import java.util.*;
 
-class Hamming {
-    public static int count;
-    public static int finalpart;
+public class Hamming {
 
-    public static void main(String args[]) {
-        Scanner scan = new Scanner(System.in);
-        System.out.println("Enter bits:");
-        String x = scan.nextLine();
-        int n = x.length();
-        int a[] = new int[n];
-
-        System.out.println("You entered:");
-        for (int i = 0; i < n; i++) {
-            int c = Integer.parseInt(String.valueOf(x.charAt(i)));
-            a[n - i - 1] = c;
-
-        }
-        System.out.println();
-
-        int b[] = generateCode(a);
-        int c[] = new int[b.length + 1];
-
-        System.out.println("Generated code is:");
-        for (int i = 0; i < b.length; i++) {
-            c[i] = b[b.length - i - 1];
-        }
-        if (count % 2 == 0) {
-            finalpart = 0;
-        } else {
-            finalpart = 1;
-        }
-        System.out.println();
-        c[b.length] = finalpart;
-        for (int i = 0; i < c.length; i++) {
-            System.out.print(c[c.length - i - 1]);
-        }
-        System.out.println();
-
-        // Difference in the sizes of original and new array will give us the number of
-        // parity bits added.
-        System.out.println(
-                "Enter position of a bit to alter to check for error detection at the receiver end (0 for no error):");
-        int error = scan.nextInt();
-        if (error != 0) {
-            c[error - 1] = (c[error - 1] + 1) % 2;
-            if (error != c.length) {
-                b[error - 1] = (b[error - 1] + 1) % 2;
+    public static int calcRedundantBits(int m) {
+        for (int x = 0; x < m; x++) {
+            if (Math.pow(2, x) >= m + x + 1) {
+                return x;
             }
         }
-        System.out.println("Sent code is:");
-        for (int i = 0; i < b.length; i++) {
-            System.out.print(b[b.length - i - 1]);
-        }
-        System.out.println();
-        for (int i = 0; i < c.length; i++) {
-            System.out.print(c[c.length - i - 1]);
-        }
-        receive(b, b.length - a.length);
+        return -1;
     }
 
-    static int[] generateCode(int a[]) {
-        // We will return the array 'b'.
-        int b[];
+    public static String posRedundantBits(String data, int r) {
+        int j = 0;
+        int k = 1;
+        int m = data.length();
+        StringBuilder res = new StringBuilder();
 
-        // We find the number of parity bits required:
-        int i = 0, parity_count = 0, j = 0, k = 0;
-        while (i < a.length) {
-            // 2^(parity bits) must equal the current position
-            // Current position is (number of bits traversed + number of parity bits + 1).
-            // +1 is needed since array indices start from 0 whereas we need to start from
-            // 1.
-
-            if (Math.pow(2, parity_count) == i + parity_count + 1) {
-                parity_count++;
-            } else {
-                i++;
-            }
-        }
-
-        // Length of 'b' is length of original data (a) + number of parity bits.
-        b = new int[a.length + parity_count];
-
-        // Initialize this array with '2' to indicate an 'unset' value in parity bit
-        // locations:
-
-        for (i = 1; i <= b.length; i++) {
-            if (Math.pow(2, j) == i) {
-                // Found a parity bit location.
-                // Adjusting with (-1) to account for array indices starting from 0 instead of
-                // 1.
-
-                b[i - 1] = 2;
+        for (int i = 1; i <= m + r; i++) {
+            if (i == Math.pow(2, j)) {
+                res.append('0');
                 j++;
             } else {
-                b[k + j] = a[k++];
+                res.append(data.charAt(m - k));
+                k++;
             }
         }
-        for (i = 0; i < parity_count; i++) {
-            // Setting even parity bits at parity bit locations:
 
-            b[((int) Math.pow(2, i)) - 1] = getParity(b, i);
-        }
-        for (i = 0; i < b.length; i++) {
-            if (b[i] == 1) {
-                count++;
-            }
-        }
-        return b;
+        return res.reverse().toString();
     }
 
-    static int getParity(int b[], int power) {
-        int parity = 0;
-        for (int i = 0; i < b.length; i++) {
-            if (b[i] != 2) {
-                // If 'i' doesn't contain an unset value,
-                // We will save that index value in k, increase it by 1,
-                // Then we convert it into binary:
-
-                int k = i + 1;
-                String s = Integer.toBinaryString(k);
-
-                // Nw if the bit at the 2^(power) location of the binary value of index is 1
-                // Then we need to check the value stored at that location.
-                // Checking if that value is 1 or 0, we will calculate the parity value.
-
-                int x = ((Integer.parseInt(s)) / ((int) Math.pow(10, power))) % 10;
-                if (x == 1) {
-                    if (b[i] == 1) {
-                        parity = (parity + 1) % 2;
-                    }
+    public static String calcParityBits(String arr, int r) {
+        int n = arr.length();
+        for (int i = 0; i < r; i++) {
+            int val = 0;
+            for (int j = 1; j <= n; j++) {
+                if ((j & (1 << i)) == (1 << i)) {
+                    val ^= Integer.parseInt(arr.charAt(n - j) + "");
                 }
             }
+            arr = arr.substring(0, n - (int) Math.pow(2, i)) + val + arr.substring(n - (int) Math.pow(2, i) + 1);
         }
-        return parity;
+        return arr;
     }
 
-    static void receive(int a[], int parity_count) {
-        // This is the receiver code. It receives a Hamming code in array 'a'.
-        // We also require the number of parity bits added to the original data.
-        // Now it must detect the error and correct it, if any.
+    public static int detectError(String arr, int nr) {
+        int n = arr.length();
+        int res = 0;
 
-        int power;
-        // We shall use the value stored in 'power' to find the correct bits to check
-        // for parity.
-
-        int parity[] = new int[parity_count];
-        // 'parity' array will store the values of the parity checks.
-
-        String syndrome = new String();
-        // 'syndrome' string will be used to store the integer value of error location.
-
-        for (power = 0; power < parity_count; power++) {
-            // We need to check the parities, the same no of times as the no of parity bits
-            // added.
-
-            for (int i = 0; i < a.length; i++) {
-                // Extracting the bit from 2^(power):
-
-                int k = i + 1;
-                String s = Integer.toBinaryString(k);
-                int bit = ((Integer.parseInt(s)) / ((int) Math.pow(10, power))) % 10;
-                if (bit == 1) {
-                    if (a[i] == 1) {
-                        parity[power] = (parity[power] + 1) % 2;
-                    }
+        for (int i = 0; i < nr; i++) {
+            int val = 0;
+            for (int j = 1; j <= n; j++) {
+                if ((j & (1 << i)) == (1 << i)) {
+                    val ^= Integer.parseInt(arr.charAt(n - j) + "");
                 }
             }
-            syndrome = parity[power] + syndrome;
-        }
-        // This gives us the parity check equation values.
-        // Using these values, we will now check if there is a single bit error and then
-        // correct it.
-
-        int error_location = Integer.parseInt(syndrome, 2);
-        if (error_location != 0) {
-            System.out.println("Error is at location " + error_location + ".");
-            a[error_location - 1] = (a[error_location - 1] + 1) % 2;
-            System.out.println("Corrected code is:");
-            for (int i = 0; i < a.length; i++) {
-                System.out.print(a[a.length - i - 1]);
-            }
-            System.out.println();
-        } else {
-            System.out.println("There is no error in the received data.");
+            res += val * Math.pow(10, i);
         }
 
-        // Finally, we shall extract the original data from the received (and corrected)
-        // code:
-        System.out.println("Original data sent was:");
-        power = parity_count - 1;
-        for (int i = a.length; i > 0; i--) {
-            if (Math.pow(2, power) != i) {
-                System.out.print(a[i - 1]);
+        return Integer.parseInt(Integer.toString(res), 2);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("¿Que desea hacer?");
+        System.out.println("1. Mandar Información.");
+        System.out.println("2. Recibir Información");
+        int menu = sc.nextInt();
+
+        if (menu == 1) {
+            System.out.print("Escribir mensaje a enviar: ");
+            String data = sc.next();
+
+            int r = calcRedundantBits(data.length());
+
+            String arr = posRedundantBits(data, r);
+
+            arr = calcParityBits(arr, r);
+
+            System.out.println("Mensaje en Hamming: " + arr);
+        } else if (menu == 2) {
+            System.out.print("Que mensaje quiere recibir: ");
+            String arr = sc.next();
+
+            int correction = detectError(arr, (int) Math.round(Math.log(arr.length()) / Math.log(2)));
+            if (correction == 0) {
+                System.out.println("No hay error en el mensaje!");
             } else {
-                power--;
+                System.out.println("Error. Posición " + (arr.length() - correction + 1) + " de izquierda.");
             }
         }
-        System.out.println();
+
     }
 }

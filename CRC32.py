@@ -16,36 +16,30 @@ def list_to_binary_string(bit_list):
     return "".join(str(bit) for bit in bit_list)
 
 if __name__ == "__main__":
-    # Input binary data as a string of 0s and 1s
-    input_data = "110101111"
+    menu = int(input("¿Que desea hacer?\n 1. Mandar Información.\n2. Recibir Información"))
+    if menu == 1:
+        input_data = input("Ingrese los digitos a enviar: ")
 
-    # Convert binary input string to a list of integers (0s and 1s)
-    data_bits = binary_string_to_list(input_data)
+        data_bits = binary_string_to_list(input_data)
 
-    # Calculate CRC-32 value for the input data
-    crc_value = crc32_binary(data_bits)
+        crc_value = crc32_binary(data_bits)
 
-    # Convert the CRC-32 value to a binary string representation
-    crc_binary_string = format(crc_value, '032b')
+        crc_binary_string = format(crc_value, '032b')
 
-    # Append the CRC-32 value to the data to simulate transmission
-    transmitted_data = input_data + crc_binary_string
+        transmitted_data = input_data + crc_binary_string
+        print(transmitted_data)
 
-    # Introduce an error in the transmitted data by flipping a bit
-    transmitted_data_with_error = transmitted_data
-    print(transmitted_data_with_error)
+    
+    elif menu == 2:
+        transmitted_data_with_error = input("Ingrese data que recibir: ")
 
-    # Extract the received data (excluding the appended CRC value)
-    received_data = transmitted_data_with_error[:-32]
+        received_data = transmitted_data_with_error[:-32]
 
-    # Convert the received data to a list of integers (0s and 1s)
-    received_bits = binary_string_to_list(received_data)
+        received_bits = binary_string_to_list(received_data)
 
-    # Calculate the CRC-32 value for the received data
-    received_crc_value = crc32_binary(received_bits)
+        received_crc_value = crc32_binary(received_bits)
 
-    # Compare the calculated CRC-32 value with the transmitted CRC value
-    if received_crc_value == int(transmitted_data_with_error[-32:], 2):
-        print("Error not detected: Data is likely intact.")
-    else:
-        print("Error detected: Data may have been corrupted during transmission.")
+        if received_crc_value == int(transmitted_data_with_error[-32:], 2):
+            print("Error no encontrado. Todo esta bien..")
+        else:
+            print("Se detecto un error. Data Corrompida")
