@@ -1,4 +1,8 @@
 import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class CRC32 {
     private static final int POLYNOMIAL = 0x04C11DB7;
@@ -28,6 +32,7 @@ public class CRC32 {
         Scanner sc = new Scanner(System.in);
         System.out.println("¿Que desea hacer?\n1. Mandar información\n2. Recibir información.");
         int a = sc.nextInt();
+        int port = 8080;
 
         if (a == 1) {
             System.out.println("Ingrese la información a mandar.");
@@ -41,23 +46,41 @@ public class CRC32 {
             String crcBinaryString = String.format("%32s", Integer.toBinaryString(crcValue)).replace(' ', '0');
 
             String transmittedData = inputBinaryData + crcBinaryString;
+
+            try (Socket socket = new Socket("localhost", port)) {
+                socket.getOutputStream().write(transmittedData.getBytes());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             System.out.println(transmittedData);
         } else if (a == 2) {
-            System.out.println("Ingrese la información a recibir.");
-            sc.nextLine();
-            String transmittedData = sc.nextLine();
+            try {
+                ServerSocket serverSocket = new ServerSocket(port);
+                System.out.println("Socket listener started. Waiting for incoming connections...");
 
-            String receivedData = transmittedData.substring(0, transmittedData.length() - 32);
+                while (true) {
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("Connection established with " + clientSocket.getInetAddress());
 
-            int[] receivedDataArray = binaryStringToIntArray(receivedData);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    String transmittedData = reader.readLine();
 
-            int receivedCrcValue = crc32Binary(receivedDataArray);
+                    String receivedData = transmittedData.substring(0, transmittedData.length() - 32);
+                    int[] receivedDataArray = binaryStringToIntArray(receivedData);
+                    int receivedCrcValue = crc32Binary(receivedDataArray);
 
-            if (receivedCrcValue == Integer
-                    .parseInt(transmittedData.substring(transmittedData.length() - 32), 2)) {
-                System.out.println("No se detecto error");
-            } else {
-                System.out.println("Se detecto un error. Data esta corrompida.");
+                    if (receivedCrcValue == Integer.parseInt(transmittedData.substring(transmittedData.length() - 32),
+                            2)) {
+                        System.out.println("No se detecto error en los datos recibidos.");
+                    } else {
+                        System.out.println("Se detecto un error. La data recibida está corrompida.");
+                    }
+
+                    clientSocket.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

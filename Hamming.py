@@ -1,12 +1,13 @@
 import math
+import random
+import socket
+
 def calcRedundantBits(m): 
     for x in range(m):
         if(2**x >= m + x + 1):
             return x
  
 def posRedundantBits(data, r):
- 
-
     j = 0
     k = 1
     m = len(data)
@@ -36,7 +37,23 @@ def calcParityBits(arr, r):
         arr = arr[:n-(2**i)] + str(val) + arr[n-(2**i)+1:]
     return arr
  
- 
+def apply_error(data):
+    for j in data:
+        random_number = random.randint(0, 100)
+        if random_number <= 1:
+            if j == '0':
+                j = '1'
+            else:
+                j = '0'
+
+def send_data(data):
+    HOST = 'localhost'
+    PORT = 8080
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST, PORT))
+        s.sendall(data.encode())
+
 def detectError(arr, nr):
     n = len(arr)
     res = 0
@@ -52,6 +69,22 @@ def detectError(arr, nr):
  
     return int(str(res), 2)
  
+def listen_for_data():
+    HOST = 'localhost'
+    PORT = 8080
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+
+        print("Listening for incoming connections...")
+        conn, addr = s.accept()
+        with conn:
+            print('Connected by', addr)
+            data = conn.recv(1024).decode()
+            print('Received data:', data)
+            return data
+
 menu = int(input("¿Que desea hacer?\n1. Mandar Información.\n2. Recibir Información\n"))
 if menu == 1:
     data = input("Escribir mensaje a enviar: ")
@@ -61,14 +94,17 @@ if menu == 1:
     arr = posRedundantBits(data, r)
     
     arr = calcParityBits(arr, r)
+
+    arr_error = apply_error(arr)
+
+    send_data(arr_error)
     
     print("Mensaje en Hamming " + arr) 
- 
- 
+
 elif menu == 2:
-    arr = input("Que mensaje quiere recibir: ")
-    correction = detectError(arr, round(math.log2(len(arr))))
-    if(correction==0):
-        print("No hay error del mensaje!")
+    received_data = listen_for_data()
+    correction = detectError(received_data, round(math.log2(len(received_data))))
+    if correction == 0:
+        print("No error in the message!")
     else:
-        print("Error. Posición ",len(arr)-correction+1," de izquieda")
+        print("Error at position", len(received_data) - correction + 1, "from the left")

@@ -1,3 +1,7 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 
 public class Hamming {
@@ -64,6 +68,7 @@ public class Hamming {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
+        int port = 8080;
         System.out.println("¿Que desea hacer?");
         System.out.println("1. Mandar Información.");
         System.out.println("2. Recibir Información");
@@ -79,16 +84,37 @@ public class Hamming {
 
             arr = calcParityBits(arr, r);
 
+            try (Socket socket = new Socket("localhost", port)) {
+                socket.getOutputStream().write(arr.getBytes());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             System.out.println("Mensaje en Hamming: " + arr);
         } else if (menu == 2) {
-            System.out.print("Que mensaje quiere recibir: ");
-            String arr = sc.next();
+            try {
+                ServerSocket serverSocket = new ServerSocket(port);
+                System.out.println("Hamming Code listener started. Waiting for incoming connections...");
 
-            int correction = detectError(arr, (int) Math.round(Math.log(arr.length()) / Math.log(2)));
-            if (correction == 0) {
-                System.out.println("No hay error en el mensaje!");
-            } else {
-                System.out.println("Error. Posición " + (arr.length() - correction + 1) + " de izquierda.");
+                while (true) {
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("Connection established with " + clientSocket.getInetAddress());
+
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    String receivedData = reader.readLine();
+
+                    int correction = detectError(receivedData,
+                            (int) Math.round(Math.log(receivedData.length()) / Math.log(2)));
+                    if (correction == 0) {
+                        System.out.println("No error in the received message!");
+                    } else {
+                        System.out.println("Error detected. Bit at position " + correction + " is incorrect.");
+                    }
+
+                    clientSocket.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
