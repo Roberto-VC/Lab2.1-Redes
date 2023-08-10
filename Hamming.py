@@ -37,10 +37,10 @@ def calcParityBits(arr, r):
         arr = arr[:n-(2**i)] + str(val) + arr[n-(2**i)+1:]
     return arr
  
-def apply_error(data):
+def apply_error(data, error):
     for j in data:
         random_number = random.randint(0, 100)
-        if random_number <= 1:
+        if random_number <= error:
             if j == '0':
                 j = '1'
             else:
@@ -87,19 +87,18 @@ def listen_for_data():
 
 menu = int(input("¿Que desea hacer?\n1. Mandar Información.\n2. Recibir Información\n"))
 if menu == 1:
-    data = input("Escribir mensaje a enviar: ")
-    
-    r = calcRedundantBits(len(data))
-    
-    arr = posRedundantBits(data, r)
-    
-    arr = calcParityBits(arr, r)
 
-    arr_error = apply_error(arr)
+    data_base = ['11110000', '10101010', '10001000']
+    errors = [1, 5, 10, 15, 20, 25]
 
-    send_data(arr_error)
-    
-    print("Mensaje en Hamming " + arr) 
+    for error in errors:
+        for data in data_base:
+            r = calcRedundantBits(len(data))
+            arr = posRedundantBits(data, r)
+            arr = calcParityBits(arr, r)
+            arr_error = apply_error(arr, error)
+            send_data(arr_error)
+            print("Mensaje en Hamming " + arr)
 
 elif menu == 2:
     received_data = listen_for_data()
