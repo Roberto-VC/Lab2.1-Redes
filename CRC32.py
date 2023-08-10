@@ -1,6 +1,22 @@
 import socket
 import random
 
+def str_to_binary(string):
+    binary_list = []
+    for char in string:
+        binary_list.append(bin(ord(char))[2:].zfill(8))  
+    return binary_list
+def BinaryToDecimal(binary):
+        
+    binary1 = binary
+    decimal, i, n = 0, 0, 0
+    while(binary != 0):
+        dec = binary % 10
+        decimal = decimal + dec * pow(2, i)
+        binary = binary//10
+        i += 1
+    return (decimal)   
+
 def crc32_binary(data):
     polynomial = 0x04C11DB7
     crc = 0xFFFFFFFF
@@ -18,14 +34,19 @@ def binary_string_to_list(binary_string):
 def list_to_binary_string(bit_list):
     return "".join(str(bit) for bit in bit_list)
 
-def apply_error(data):
-    for j in data:
-        random_number = random.randint(0, 100)
-        if random_number <= 1:
-            if j == '0':
-                j = '1'
+def apply_error(bits, rate):
+    byte = ''
+    for x in range(len(bits)):
+        y = random.randint(0,rate)
+        if y == 0:
+            if bits[x] == '0':
+                byte += '1'
             else:
-                j = '0'
+                byte += '0'
+        else: 
+            byte += bits[x]
+    return byte
+
 
 def send_data(data):
     HOST = 'localhost'
@@ -54,21 +75,31 @@ def listen_for_data():
 if __name__ == "__main__":
     menu = int(input("¿Que desea hacer?\n 1. Mandar Información.\n2. Recibir Información"))
     if menu == 1:
-        input_data = input("Ingrese los digitos a enviar: ")
+        input_data = input("Ingrese el mensaje a enviar: ")
+        bin = str_to_binary(input_data)
 
-        data_bits = binary_string_to_list(input_data)
+        text = ""
+        for x in range(len(bin)):
 
-        crc_value = crc32_binary(data_bits)
+            data_bits = binary_string_to_list(bin[x])
 
-        crc_binary_string = format(crc_value, '032b')
+            crc_value = crc32_binary(data_bits)
 
-        transmitted_data = input_data + crc_binary_string
+            crc_binary_string = format(crc_value, '032b')
 
-        data_error = apply_error(transmitted_data)
+            transmitted_data = bin[x] + crc_binary_string
 
-        send_data(transmitted_data)
 
-        print(transmitted_data)
+            data_error = apply_error(transmitted_data, 100)
+
+            print(data_error)
+
+            text += data_error
+            if bin[x] != bin[-1]:
+                text += " "
+
+        send_data(text)
+
 
     elif menu == 2:
         received_data_with_error = listen_for_data()
