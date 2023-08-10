@@ -6,20 +6,23 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class CRC32 {
-    private static final int POLYNOMIAL = 0x04C11DB7;
+    public static long crc32Binary(String data) {
+        long polynomial = 0x04C11DB7L;
+        long crc = 0xFFFFFFFFL;
 
-    public static int crc32Binary(String data) {
-        int polynomial = 0x04C11DB7;
-        int crc = 0xFFFFFFFF;
-
-        for (char bit : data.toCharArray()) {
-            crc ^= (Integer.parseInt(String.valueOf(bit)) << 31);
-            for (int i = 0; i < 8; i++) {
-                crc = (crc << 1) ^ ((crc & 0x80000000) != 0 ? polynomial : 0);
+        for (int i = 0; i < data.length(); i++) {
+            int bit = Character.getNumericValue(data.charAt(i));
+            crc ^= (bit << 31);
+            for (int j = 0; j < 8; j++) {
+                if ((crc & 0x80000000L) != 0) {
+                    crc = (crc << 1) ^ polynomial;
+                } else {
+                    crc = (crc << 1);
+                }
             }
         }
 
-        return crc & 0xFFFFFFFF;
+        return crc & 0xFFFFFFFFL;
     }
 
     public static int[] binaryStringToList(String binaryString) {
@@ -47,15 +50,13 @@ public class CRC32 {
         if (a == 1) {
             System.out.println("Ingrese la información a mandar.");
             sc.nextLine();
-            String inputBinaryData = sc.nextLine();
+            String input_data = sc.nextLine();
 
-            int[] data_bits = binaryStringToList(inputBinaryData);
+            long crc_value = crc32Binary(input_data);
 
-            int crc_value = crc32Binary(listToBinaryString(data_bits));
+            String crc_binary_string = String.format("%32s", Long.toBinaryString(crc_value)).replace(' ', '0');
 
-            String crc_binary_string = String.format("%32s", Integer.toBinaryString(crc_value)).replace(' ', '0');
-
-            String transmittedData = inputBinaryData + crc_binary_string;
+            String transmittedData = input_data + crc_binary_string;
 
             try (Socket socket = new Socket("localhost", port)) {
                 socket.getOutputStream().write(transmittedData.getBytes());
@@ -83,14 +84,14 @@ public class CRC32 {
                     for (String x : arrOfStr) {
                         System.out.println(x);
 
-                        int crcLength = 32;
                         String received_data = x.substring(0,
-                                x.length() - crcLength);
+                                x.length() - 32);
 
-                        int received_crc_value = Integer.parseInt(x.substring(x.length() - 32), 2);
+                        String received_crc_part = x
+                                .substring(x.length() - 32);
+                        long received_crc_value = Long.parseLong(received_crc_part, 2);
 
-                        int[] received_bits = binaryStringToList(received_data);
-                        int calculated_crc = crc32Binary(listToBinaryString(received_bits));
+                        long calculated_crc = crc32Binary(received_data);
 
                         if (calculated_crc == received_crc_value) {
                             System.out.println("No se detecto error en los datos recibidos.");
