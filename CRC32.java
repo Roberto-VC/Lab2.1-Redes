@@ -1,3 +1,4 @@
+import java.util.Random;
 import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileWriter;
@@ -41,6 +42,20 @@ public class CRC32 {
         return binaryString.toString();
     }
 
+    public static String generateRandomString(String data) {
+        Random random = new Random();
+        StringBuilder randomChars = new StringBuilder();
+
+        for (int i = 0; i < 8; i++) {
+            char randomChar = (char) (random.nextInt(26) + 'A'); // Generate random uppercase letter
+            randomChars.append(randomChar);
+        }
+
+        String secondPart = randomChars.substring(4);
+
+        return data + " " + secondPart;
+    }
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         System.out.println("¿Que desea hacer?\n1. Mandar información\n2. Recibir información.");
@@ -48,9 +63,14 @@ public class CRC32 {
         int port = 8080;
 
         if (a == 1) {
-            System.out.println("Ingrese la información a mandar.");
-            sc.nextLine();
-            String input_data = sc.nextLine();
+            String input_data = "";
+            int sizeText = 10;
+
+            for (int i = 0; i < sizeText; i++) {
+                input_data += generateRandomString(input_data);
+            }
+
+            System.out.println(input_data);
 
             long crc_value = crc32Binary(input_data);
 

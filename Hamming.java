@@ -125,6 +125,20 @@ public class Hamming {
         return decodedMessageBuilder.reverse().toString();
     }
 
+    public static String generateRandomString(String data) {
+        Random random = new Random();
+        StringBuilder randomChars = new StringBuilder();
+
+        for (int i = 0; i < 8; i++) {
+            char randomChar = (char) (random.nextInt(26) + 'A'); // Generate random uppercase letter
+            randomChars.append(randomChar);
+        }
+
+        String secondPart = randomChars.substring(4);
+
+        return data + " " + secondPart;
+    }
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
@@ -138,8 +152,14 @@ public class Hamming {
         int menu = sc.nextInt();
 
         if (menu == 1) {
-            System.out.print("Escribir mensaje a enviar: ");
-            String data = sc.next();
+            String data = "";
+            int sizeText = 10;
+
+            for (int i = 0; i < sizeText; i++) {
+                data += generateRandomString(data);
+            }
+
+            System.out.println(data);
 
             int r = calcRedundantBits(data.length());
 
